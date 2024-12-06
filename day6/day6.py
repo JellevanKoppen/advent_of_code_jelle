@@ -75,6 +75,7 @@ def set_next_step(map, guard_location, guard_direction):
         # Obstacle detected, turn right instead
         place_guard_on_map(map, next_direction, guard_location)
     elif assumed_next_step == "O":
+        print(f"O - hit!")
         o_hits += 1
         if o_hits >= 4:
             # Guard hit same obstacle 4 times, assume guard is in loop
@@ -83,6 +84,7 @@ def set_next_step(map, guard_location, guard_direction):
     else:
         # No obstacle detected, place guard on next tile
         place_guard_on_map(map, guard_direction, (guard_x, guard_y))
+        print(f"Guard on next step ({guard_x}, {guard_y})")
 
     return False
 
@@ -130,6 +132,7 @@ def exercise_1(puzzle_input):
     
 def place_obstacle(map, coordinates):
     x, y = coordinates
+    print(f"Placing obstacle at {x},{y}")
     map[y][x] = "O"
     
 def remove_obstacle(map, coordinates):
@@ -137,7 +140,6 @@ def remove_obstacle(map, coordinates):
     map[y][x] = "."
 
 def exercise_2(puzzle_input):
-    is_finished = False
     map = convert_to_matrix(puzzle_input)
     obstacle_nr = 1
     obstacle = get_next_possible_obstacle(obstacle_nr)
@@ -150,17 +152,21 @@ def exercise_2(puzzle_input):
         place_obstacle(map, obstacle)
         # Do checks for infinite loop
         is_finished = False
+        step_counter = 0
         while not is_finished:
+            step_counter += 1
             guard_location = get_guard_coordinates(map)
             guard_direction = get_coordinates(map, guard_location)
             is_finished = set_next_step(map, guard_location, guard_direction)
+            if step_counter % 100 == 0:
+                print(f"finished step {step_counter}, last location of guard ({guard_location})")
         if o_hits >= 4:
             infinite_loops_found += 1
             print(f"Infinite loop found! ({infinite_loops_found})")
         remove_obstacle(map, obstacle)
         obstacle_nr += 1
         obstacle = get_next_possible_obstacle(obstacle_nr)
-        place_guard_on_map(initial_guard_direction, initial_guard_location)
+        place_guard_on_map(map, initial_guard_direction, initial_guard_location)
         o_hits = 0
 
     
