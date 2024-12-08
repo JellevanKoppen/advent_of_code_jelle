@@ -38,8 +38,9 @@ def get_coordinates(map, coordinates):
     return map[y][x]
 
 def set_next_step(map, guard_location, guard_direction):
-    x_outer_bound = len(map[0])
-    y_outer_bound = len(map)
+    global o_hits
+    x_outer_bound = len(map[0]) - 1
+    y_outer_bound = len(map) - 1
     guard_x, guard_y = guard_location
     next_direction = ""
     if guard_direction == "^":
@@ -84,7 +85,6 @@ def set_next_step(map, guard_location, guard_direction):
     else:
         # No obstacle detected, place guard on next tile
         place_guard_on_map(map, guard_direction, (guard_x, guard_y))
-        print(f"Guard on next step ({guard_x}, {guard_y})")
 
     return False
 
@@ -102,10 +102,14 @@ def count_steps(map):
     return x_counter
 
 def find_obstacle(map, obstacle_nr):
+    global initial_guard_location
+    initial_x, initial_y = initial_guard_location
     obstacles_found = 0
     for y in range(0, len(map)):
         row = map[y]
         for x in range(0, len(row)):
+            if x == initial_x and y == initial_y:
+                continue
             if row[x] == "X":
                 # Obstacle found
                 obstacles_found += 1
@@ -114,6 +118,7 @@ def find_obstacle(map, obstacle_nr):
     return None
 
 def get_next_possible_obstacle(obstacle_nr):
+    global initial_guard_location
     path_history = get_puzzle_input('path_history')
     guard_map = convert_to_matrix(path_history)
     next_obstacle = find_obstacle(guard_map, obstacle_nr)
@@ -139,35 +144,52 @@ def remove_obstacle(map, coordinates):
     x, y = coordinates
     map[y][x] = "."
 
+def remove_guard_from_map(map):
+    guard_location = get_guard_coordinates(map)
+    x, y = guard_location
+    map[y][x] = "."
+
 def exercise_2(puzzle_input):
+    global o_hits
+    global initial_guard_direction
+    global initial_guard_location
+
     map = convert_to_matrix(puzzle_input)
-    obstacle_nr = 1
-    obstacle = get_next_possible_obstacle(obstacle_nr)
+
+    obstacle_nr = 461
+
     initial_guard_location = get_guard_coordinates(map)
     initial_guard_direction = get_coordinates(map, initial_guard_location)
     infinite_loops_found = 0
+    obstacle = get_next_possible_obstacle(obstacle_nr)
 
     while obstacle:
         print(f"Placing obstacle nr {obstacle_nr}")
         place_obstacle(map, obstacle)
-        # Do checks for infinite loop
+        place_guard_on_map(map, initial_guard_direction, initial_guard_location)
+
+        o_hits = 0
         is_finished = False
         step_counter = 0
         while not is_finished:
             step_counter += 1
             guard_location = get_guard_coordinates(map)
             guard_direction = get_coordinates(map, guard_location)
+            mark_guard_location(map, guard_location)
             is_finished = set_next_step(map, guard_location, guard_direction)
-            if step_counter % 100 == 0:
-                print(f"finished step {step_counter}, last location of guard ({guard_location})")
+            if step_counter > 20000:
+                infinite_loops_found += 1
+                print("indirect infinite loop found by repetition")
+                remove_guard_from_map(map)
+                is_finished = True
+
         if o_hits >= 4:
             infinite_loops_found += 1
             print(f"Infinite loop found! ({infinite_loops_found})")
+
         remove_obstacle(map, obstacle)
         obstacle_nr += 1
         obstacle = get_next_possible_obstacle(obstacle_nr)
-        place_guard_on_map(map, initial_guard_direction, initial_guard_location)
-        o_hits = 0
 
     
     print(f"Infinite loops found {infinite_loops_found}")
@@ -176,6 +198,6 @@ def exercise_2(puzzle_input):
 def main():
     puzzle_input = get_puzzle_input('input')
     # exercise_1(puzzle_input)
-    exercise_2(puzzle_input) 
+    exercise_2(puzzle_input) #1392 (too low) > 1575
 
 main()
